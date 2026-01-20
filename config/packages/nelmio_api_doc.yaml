@@ -1,0 +1,13 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Jukebox Analytics API
+            description: REST API for collecting statistics and remote control of music jukeboxes
+            version: 1.0.0
+        servers:
+            - url: /
+              description: Default server
+    areas:
+        default:
+            path_patterns:
+                - ^/api(?!/doc$)

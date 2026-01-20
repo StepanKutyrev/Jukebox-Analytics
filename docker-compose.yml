@@ -1,0 +1,34 @@
+version: '2.2'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jukebox_app
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/var/www/Jukebox
+    working_dir: /var/www/Jukebox
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16
+    container_name: jukebox_db
+    environment:
+      POSTGRES_USER: jukebox
+      POSTGRES_PASSWORD: jukebox_password
+      POSTGRES_DB: jukebox_analytics
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
