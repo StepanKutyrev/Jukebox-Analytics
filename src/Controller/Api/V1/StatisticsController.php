@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\V1;
 
-use App\Service\StatisticsService;
+use App\UseCase\GetTopTracksUseCase;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,7 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class StatisticsController extends AbstractController
 {
     public function __construct(
-        private readonly StatisticsService $statisticsService
+        private readonly GetTopTracksUseCase $getTopTracksUseCase
     ) {
     }
 
@@ -40,7 +40,7 @@ class StatisticsController extends AbstractController
     )]
     public function top(): JsonResponse
     {
-        $topTracks = $this->statisticsService->getTopTracks(3);
+        $topTracks = $this->getTopTracksUseCase->execute(3);
 
         return $this->json(
             array_map(fn($dto) => $dto->toArray(), $topTracks)

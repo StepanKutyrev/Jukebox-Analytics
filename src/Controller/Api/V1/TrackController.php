@@ -5,25 +5,20 @@ declare(strict_types=1);
 namespace App\Controller\Api\V1;
 
 use App\DTO\UpdatePriceDTO;
-use App\Repository\TrackRepository;
-use App\Service\TrackService;
+use App\Exception\ResourceNotFoundException;
+use App\UseCase\UpdateTrackPriceUseCase;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[OA\Tag(name: 'Tracks')]
 class TrackController extends AbstractController
 {
     public function __construct(
-        private readonly TrackService $trackService,
-        private readonly TrackRepository $trackRepository,
-        private readonly ValidatorInterface $validator,
-        private readonly SerializerInterface $serializer
+        private readonly UpdateTrackPriceUseCase $updateTrackPriceUseCase
     ) {
     }
 
@@ -55,38 +50,24 @@ class TrackController extends AbstractController
             new OA\Response(response: 404, description: 'Track not found')
         ]
     )]
-    public function updatePrice(int $id, Request $request): JsonResponse
-    {
-        $track = $this->trackRepository->find($id);
-        if ($track === null) {
+    public function updatePrice(
+        int $id,
+        #[MapRequestPayload] UpdatePriceDTO $dto
+    ): JsonResponse {
+        try {
+            $updatedTrack = $this->updateTrackPriceUseCase->execute($id, $dto);
+
+            return $this->json([
+                'id' => $updatedTrack->getId(),
+                'title' => $updatedTrack->getTitle(),
+                'artist' => $updatedTrack->getArtist(),
+                'price' => $updatedTrack->getPrice()
+            ]);
+        } catch (ResourceNotFoundException $e) {
             return $this->json(
-                ['error' => 'Track not found'],
+                ['error' => $e->getMessage()],
                 Response::HTTP_NOT_FOUND
             );
         }
-
-        $dto = $this->serializer->deserialize(
-            $request->getContent(),
-            UpdatePriceDTO::class,
-            'json'
-        );
-
-        $errors = $this->validator->validate($dto);
-        if (count($errors) > 0) {
-            $messages = [];
-            foreach ($errors as $error) {
-                $messages[$error->getPropertyPath()] = $error->getMessage();
-            }
-            return $this->json(['errors' => $messages], Response::HTTP_BAD_REQUEST);
-        }
-
-        $updatedTrack = $this->trackService->updatePrice($track, $dto->new_price);
-
-        return $this->json([
-            'id' => $updatedTrack->getId(),
-            'title' => $updatedTrack->getTitle(),
-            'artist' => $updatedTrack->getArtist(),
-            'price' => $updatedTrack->getPrice()
-        ]);
     }
 }
